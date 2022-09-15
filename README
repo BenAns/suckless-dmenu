@@ -5,7 +5,8 @@ dmenu is an efficient dynamic menu for X.
 
 Requirements
 ------------
-In order to build dmenu you need the Xlib header files.
+In order to build dmenu you need the Xlib header files. In Gentoo,
+this is package "x11-libs/libX11".
 
 
 Installation
