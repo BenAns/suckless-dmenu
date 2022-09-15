@@ -58,6 +58,8 @@ static Clr *scheme[SchemeLast];
 static int (*fstrncmp)(const char *, const char *, size_t) = strncmp;
 static char *(*fstrstr)(const char *, const char *) = strstr;
 
+static int tabseq = 0;
+
 static unsigned int
 textw_clamp(const char *str, unsigned int n)
 {
@@ -412,6 +414,8 @@ keypress(XKeyEvent *ev)
 		}
 	}
 
+	tabseq = tabseq && (ksym == XK_Tab);
+
 	switch(ksym) {
 	default:
 insert:
@@ -498,6 +502,23 @@ insert:
 		if (sel)
 			sel->out = 1;
 		break;
+	case XK_Tab:
+		if (!tabseq && fstrncmp(text, sel->text, sizeof text - 1)) {
+			if (!sel)
+				return;
+			cursor = strnlen(sel->text, sizeof text - 1);
+			memcpy(text, sel->text, cursor);
+			text[cursor] = '\0';
+			match();
+			tabseq = 1;
+			break;
+		}
+		tabseq = 1;
+		if(sel->right)
+			goto down;
+		sel = curr = matches;
+		calcoffsets();
+		break;
 	case XK_Right:
 	case XK_KP_Right:
 		if (text[cursor] != '\0') {
@@ -509,18 +530,11 @@ insert:
 		/* fallthrough */
 	case XK_Down:
 	case XK_KP_Down:
+down:
 		if (sel && sel->right && (sel = sel->right) == next) {
 			curr = next;
 			calcoffsets();
 		}
-		break;
-	case XK_Tab:
-		if (!sel)
-			return;
-		cursor = strnlen(sel->text, sizeof text - 1);
-		memcpy(text, sel->text, cursor);
-		text[cursor] = '\0';
-		match();
 		break;
 	}
 
